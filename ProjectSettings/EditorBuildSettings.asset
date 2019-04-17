@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 0
+    path: 
+    guid: 00000000000000000000000000000000
+  - enabled: 1
+    path: Assets/Scenes/LoginScene.unity
+    guid: f6d95c9a4634a554eb33ddb51879cd05
+  - enabled: 0
+    path: Assets/Thirdparty/RPG Character Animation Pack/SuperCharacterController/Scenes/TestZoneRPGCharacter.unity
+    guid: 428c84dbcdd8f9f44bb80bf933206394
+  - enabled: 1
+    path: Assets/Scenes/WorldScene.unity
+    guid: 9cfa514cec2f655429bf9db0f3f0c289
+  m_configObjects: {}

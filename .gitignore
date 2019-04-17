@@ -4,3 +4,5 @@ packages/
 .vs/
 Logs/
 Temp/
+**/*.log
+*.log

@@ -3,7 +3,7 @@
 public class FollowCamera : MonoBehaviour
 {
     public GameObject target;
-    public Vector3 offset = Vector3.zero;
+    public Vector3 offset = new Vector3(2, 2, 2); //Vector3.zero;
 
     void LateUpdate()
     {

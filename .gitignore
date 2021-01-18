@@ -6,3 +6,9 @@ Logs/
 Temp/
 **/*.log
 *.log
+.idea/
+.DS_Store
+Library/ShaderCache/
+Library/PackageCache/
+Library/StateCache/
+Library/PlayerDataCache/

@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using Tyranny.Client.Handlers;
 using Tyranny.Client.System;
 using Tyranny.Networking;
+using UnityEngine.SceneManagement;
 
 namespace Tyranny.Client.Network
 {
     public class WorldClient : Singleton<WorldClient>
     {
-        private static NLog.Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public delegate void PacketHandlerDelegate(PacketReader packetIn, WorldClient worldClient);
 
@@ -18,7 +19,12 @@ namespace Tyranny.Client.Network
         public string Username { get; private set; }
         public byte[] AuthToken { get; private set; }
 
-        public Guid Id { get { return tcpClient.Id; } set { tcpClient.Id = value; } }
+        public Guid Id
+        {
+            get => tcpClient.Id;  
+            set => tcpClient.Id = value;
+        }
+        
         public bool Connected => tcpClient?.Connected ?? false;
 
         private AsyncTcpClient tcpClient;
@@ -39,6 +45,7 @@ namespace Tyranny.Client.Network
             Username = username;
             AuthToken = authToken;
 
+            Logger.Debug($"Connecting to server {Host}:{Port}...");
             tcpClient = new AsyncTcpClient();
             tcpClient.OnConnected += OnConnected;
             tcpClient.OnConnectFailed += OnConnectFailed;
@@ -55,47 +62,53 @@ namespace Tyranny.Client.Network
 
         public void Send(PacketWriter packetOut)
         {
+            Logger.Debug($"Sending packet ({packetOut.Opcode})...");
             tcpClient.Send(packetOut);
         }
 
         public void OnConnected(object source, SocketEventArgs args)
         {
+            Registry.Get<EventManager>().FireEvent_OnWorldConnect(this);
             PacketWriter ident = new PacketWriter(TyrannyOpcode.GameIdent);
             ident.Write(Username);
             ident.Write((short)AuthToken.Length);
             ident.Write(AuthToken);
-            logger.Debug("Sending ident");
+            Logger.Debug("Sending ident");
             tcpClient.Send(ident);
         }
 
         public void OnConnectFailed(object source, SocketEventArgs args)
         {
-            logger.Error($"Failed to connect to {Host}:{Port}");
+            Registry.Get<EventManager>().FireEvent_OnWorldConnectFailed(this);
+            Logger.Error($"Failed to connect to {Host}:{Port}");
+            SceneManager.LoadScene("LoginScene");
         }
 
         public void OnDisconnected(object source, SocketEventArgs args)
         {
-            logger.Info($"Disconnected from {Host}:{Port}");
+            Registry.Get<EventManager>().FireEvent_OnWorldDisconnect(this);
+            Logger.Info($"Disconnected from {Host}:{Port}");
+            SceneManager.LoadScene("LoginScene");
         }
 
         public void OnDataReceived(object source, PacketEventArgs args)
         {
             TyrannyOpcode opcode = args.Packet.Opcode;
-            PacketHandlerDelegate handler;
-            if (packetHandlers.TryGetValue(opcode, out handler))
+            if (packetHandlers.TryGetValue(opcode, out PacketHandlerDelegate handler))
             {
+                Logger.Debug($"Received opcode: {opcode}");
                 try
                 {
                     handler(args.Packet, this);
                 }
                 catch (Exception ex)
                 {
-                    logger.Warn(ex.ToString());
+                    Logger.Warn(ex.ToString());
                 }
             }
             else
             {
-                logger.Warn($"No handler found for opcode {opcode}");
+                Logger.Warn($"No handler found for opcode {opcode}");
             }
         }
     }

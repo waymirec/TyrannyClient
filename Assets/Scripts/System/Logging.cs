@@ -14,7 +14,7 @@ namespace Tyranny.Client.System
         {
             var config = new NLog.Config.LoggingConfiguration();
 
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = "c:/logs/game.log" };
+            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = "/Users/waymirec/tyranny_client.log" };
             var logconsole = new NLog.Targets.ConsoleTarget("logconsole");
 
             config.AddRule(LogLevel.Debug, LogLevel.Fatal, logconsole);

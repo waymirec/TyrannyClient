@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Tyranny.Client.Events
 {
-    public class LoginEventArgs : EventArgs
+    public class WorldAuthEventArgs : EventArgs
     {
         public Guid Guid { get; set; }
     }

@@ -13,7 +13,7 @@
         private void Initialize()
         {
             AuthenticationServer = new AuthenticationServer();
-            AuthenticationServer.Address = "192.168.0.142";
+            AuthenticationServer.Address = "192.168.255.128";
             AuthenticationServer.Port = 5554;
         }
     }

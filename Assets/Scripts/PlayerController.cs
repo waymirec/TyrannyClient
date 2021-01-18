@@ -23,16 +23,16 @@ public class PlayerController : MonoBehaviour
         if(Input.GetMouseButtonDown(0))
         {
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            if(Physics.Raycast(ray, out hit))
+            if(Physics.Raycast(ray, out RaycastHit hit))
             {
                 agent.SetDestination(hit.point);
 
+                var pos = agent.transform.position;
                 PacketWriter movePacket = new PacketWriter(TyrannyOpcode.Move);
                 movePacket.Write(Registry.Get<WorldClient>().Id.ToByteArray());
-                movePacket.Write(agent.transform.position.x);
-                movePacket.Write(agent.transform.position.y);
-                movePacket.Write(agent.transform.position.z);
+                movePacket.Write(pos.x);
+                movePacket.Write(pos.y);
+                movePacket.Write(pos.z);
                 movePacket.Write(hit.point.x);
                 movePacket.Write(hit.point.y);
                 movePacket.Write(hit.point.z);

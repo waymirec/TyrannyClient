@@ -4,8 +4,8 @@ using UnityEngine;
 namespace RPGCharacterAnims
 {
     [RequireComponent(typeof(RPGCharacterMovementController))]
-    [RequireComponent(typeof(RPGCharacterWeaponController))]
-    [RequireComponent(typeof(RPGCharacterInputController))]
+    //[RequireComponent(typeof(RPGCharacterWeaponController))]
+    //[RequireComponent(typeof(RPGCharacterInputController))]
     public class RPGCharacterController:MonoBehaviour
     {
         //Components.

@@ -4,67 +4,59 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using Tyranny.Client.System;
 using Tyranny.Networking;
-using UnityEngine;
 
 namespace Tyranny.Client.Network
 {
     public class AuthenticationClient
     {
-        private static NLog.Logger logger = LogManager.GetCurrentClassLogger();
-        private SHA256 sha256;
-        private TcpClient tcpClient;
-        private string serverAddress;
-        private int serverPort;
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        
+        private readonly SHA256 _sha256;
+        private readonly TcpClient _tcpClient;
+        private readonly string _serverAddress;
+        private readonly int _serverPort;
 
         public AuthenticationClient(string serverAddress, int serverPort)
         {
-            this.sha256 = SHA256Managed.Create();
-            this.tcpClient = new TcpClient();
-            this.serverAddress = serverAddress;
-            this.serverPort = serverPort;
+            _sha256 = SHA256Managed.Create();
+            _tcpClient = new TcpClient();
+            _serverAddress = serverAddress;
+            _serverPort = serverPort;
         }
 
-        public AuthenticationResult authenticate(string username, string password)
+        public AuthenticationResult Authenticate(string username, string password)
         {
-            bool connected = tcpClient.Connect(serverAddress, serverPort);
+            bool connected = _tcpClient.Connect(_serverAddress, _serverPort);
             if (!connected)
             {
-                throw new IOException($"failed to connect to {serverAddress}:{serverPort}");
+                throw new IOException($"failed to connect to {_serverAddress}:{_serverPort}");
             }
 
-            byte[] challenge = Identify(username);
-            byte ack = Verify(challenge, password);
-            AuthenticationResult result;
-            if (ack == 0)
-            {
-                result = CompleteAuth();
-            }
-            else
-            {
-                result = new AuthenticationResult((AuthenticationStatus)ack);
-            }
-            return result;
+            var challenge = Identify(username);
+            var ack = Verify(challenge, password);
+            
+            return ack == 0
+                ? CompleteAuth()
+                : new AuthenticationResult((AuthenticationStatus)ack);
         }
 
         private byte[] Identify(String username)
         {
             // SEND IDENT
-            PacketWriter identPacket = new PacketWriter(TyrannyOpcode.AuthIdent);
+            var identPacket = new PacketWriter(TyrannyOpcode.AuthIdent);
             identPacket.Write((short)1); // Major Vsn
             identPacket.Write((short)1); // Minor Vsn
             identPacket.Write((short)1); // Maint Vsn
             identPacket.Write((short)1); // Build Vsn
             identPacket.Write(username);
-            tcpClient.Send(identPacket);
+            _tcpClient.Send(identPacket);
 
-            PacketReader challengePacket;
-            if (tcpClient.Read(out challengePacket))
+            if (_tcpClient.Read(out PacketReader challengePacket))
             {
-                int len = challengePacket.ReadInt16();
+                var len = challengePacket.ReadInt16();
                 Console.WriteLine($"Challenge Length: {len}");
-                byte[] challenge = challengePacket.ReadBytes(len);
+                var challenge = challengePacket.ReadBytes(len);
                 Console.WriteLine($"DATA: {BitConverter.ToString(challenge).Replace("-", "")}");
 
                 return challenge;
@@ -77,76 +69,67 @@ namespace Tyranny.Client.Network
 
         private byte Verify(byte[] challenge, string password)
         {
-            byte[] passwordHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            logger.Debug($"Password Hash: !{BitConverter.ToString(passwordHash).Replace("-", string.Empty)}!");
-
-            IncrementalHash sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            var passwordHash = _sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+            
+            var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
             sha.AppendData(challenge);
             sha.AppendData(passwordHash);
-            byte[] proof = sha.GetHashAndReset();
-            logger.Debug($"Proof: !{BitConverter.ToString(proof).Replace("-", string.Empty)}!");
+            
+            var proof = sha.GetHashAndReset();
+            Logger.Debug($"Proof: !{BitConverter.ToString(proof).Replace("-", string.Empty)}!");
 
-            byte[] proofLength = BitConverter.GetBytes((short)proof.Length);
+            var proofLength = BitConverter.GetBytes((short)proof.Length);
             if (BitConverter.IsLittleEndian) Array.Reverse(proofLength);
 
-            PacketWriter proofPacket = new PacketWriter(TyrannyOpcode.AuthProof);
+            var proofPacket = new PacketWriter(TyrannyOpcode.AuthProof);
             proofPacket.Write(proofLength);
             proofPacket.Write(proof);
-            tcpClient.Send(proofPacket);
-
-            PacketReader proofAckPacket;
-            if (tcpClient.Read(out proofAckPacket))
+            _tcpClient.Send(proofPacket);
+            
+            if (_tcpClient.Read(out PacketReader proofAckPacket))
             {
-                byte ack = proofAckPacket.ReadByte();
-                logger.Debug($"Got Proof Ack: {ack}");
-
-                return ack;
+                return proofAckPacket.ReadByte();
             }
-            else
-            {
-                throw new IOException("Failed to receive proof ack");
-            }
+            
+            throw new IOException("Failed to receive proof ack");
         }
 
         private AuthenticationResult CompleteAuth()
         {
-            PacketWriter packetOut = new PacketWriter(TyrannyOpcode.AuthProofAckAck);
+            var packetOut = new PacketWriter(TyrannyOpcode.AuthProofAckAck);
             packetOut.Write(1);
-            tcpClient.Send(packetOut);
+            _tcpClient.Send(packetOut);
 
-            PacketReader authCompletePacket;
-            if (tcpClient.Read(out authCompletePacket))
+            if (_tcpClient.Read(out PacketReader authCompletePacket))
             {
-                int status = authCompletePacket.ReadInt32();
+                var status = authCompletePacket.ReadInt32();
                 if (status == 0)
                 {
-                    long ipValue = BitConverter.ToUInt32(authCompletePacket.ReadBytes(4), 0);
-                    int port = authCompletePacket.ReadInt32();
-                    short authTokenLen = authCompletePacket.ReadInt16();
-                    byte[] authToken = authCompletePacket.ReadBytes(authTokenLen);
-                    string ip = new IPAddress(ipValue).ToString();
-                    logger.Debug($"Auth successful: Status={status}, IP={ip}, Port={port}, Token={BitConverter.ToString(authToken).Replace("-", string.Empty)}");
+                    var ipValue = BitConverter.ToUInt32(authCompletePacket.ReadBytes(4), 0);
+                    var port = authCompletePacket.ReadInt32();
+                    var authTokenLen = authCompletePacket.ReadInt16();
+                    var authToken = authCompletePacket.ReadBytes(authTokenLen);
+                    var ip = new IPAddress(ipValue).ToString();
+                    Logger.Debug($"Auth successful: Status={status}, IP={ip}, Port={port}, Token={BitConverter.ToString(authToken).Replace("-", string.Empty)}");
                     return new AuthenticationResult((AuthenticationStatus)status, ip, port, authToken);
                 }
                 else
                 {
-                    logger.Debug($"Auth failed with status {(AuthenticationStatus)status}");
+                    Logger.Debug($"Auth failed with status {(AuthenticationStatus)status}");
                     return new AuthenticationResult((AuthenticationStatus)status);
                 }
             }
-            else
-            {
-                throw new IOException("Failed to receive auth complete");
-            }
+                
+            throw new IOException("Failed to receive auth complete");
         }        
     }
 
     public class AuthenticationResult
     {
-        public AuthenticationStatus Status { get; private set; }
-        public String Ip { get; private set; }
-        public int Port { get; private set; }
-        public byte[] Token { get; private set; }
+        public AuthenticationStatus Status { get; }
+        public String Ip { get; }
+        public int Port { get; }
+        public byte[] Token { get; }
 
         public AuthenticationResult(AuthenticationStatus status)
         {

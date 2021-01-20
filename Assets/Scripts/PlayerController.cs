@@ -12,9 +12,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private NavMeshAgent agent;
 
+    private Animator anim;
+    
     private void Awake()
     {
         cam = Camera.main;
+        anim = GetComponent<Animator>();
     }
 
     // Update is called once per frame
@@ -39,5 +42,7 @@ public class PlayerController : MonoBehaviour
                 Registry.Get<WorldClient>().Send(movePacket);
             }
         }
+
+        anim.SetFloat("DistanceRemaining", agent.remainingDistance);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Tyranny.Client.System
+namespace System
 {
     public class Singleton<T> : MonoBehaviour where T : Component
     {
@@ -47,7 +47,15 @@ namespace Tyranny.Client.System
             {
                 Destroy(gameObject);
             }
+
+            OnAwake();
         }
+
+        protected virtual void OnAwake()
+        {
+            
+        }
+        
         #endregion
     }
 }

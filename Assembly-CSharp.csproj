@@ -58,29 +58,34 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+     <Compile Include="Assets\Scripts\ClickToMove.cs" />
+     <Compile Include="Assets\Scripts\Core\ObjectExtensions.cs" />
+     <Compile Include="Assets\Scripts\Events\NetworkEvents.cs" />
      <Compile Include="Assets\Scripts\Events\WorldEvents.cs" />
      <Compile Include="Assets\Scripts\FollowCamera.cs" />
      <Compile Include="Assets\Scripts\Handlers\WorldHandlers.cs" />
+     <Compile Include="Assets\Scripts\LocomotionSimpleAgent.cs" />
      <Compile Include="Assets\Scripts\Login.cs" />
-     <Compile Include="Assets\Scripts\Managers\Configuration.cs" />
+     <Compile Include="Assets\Scripts\Managers\CameraManager.cs" />
      <Compile Include="Assets\Scripts\Managers\EventManager.cs" />
-     <Compile Include="Assets\Scripts\Managers\Registry.cs" />
+     <Compile Include="Assets\Scripts\Managers\GameConfiguration.cs" />
+     <Compile Include="Assets\Scripts\Managers\GameManager.cs" />
+     <Compile Include="Assets\Scripts\Managers\NetworkEventManager.cs" />
+     <Compile Include="Assets\Scripts\Managers\WorldEntityManager.cs" />
      <Compile Include="Assets\Scripts\Network\AuthenticationClient.cs" />
      <Compile Include="Assets\Scripts\Network\WorldClient.cs" />
      <Compile Include="Assets\Scripts\Player.cs" />
      <Compile Include="Assets\Scripts\PlayerController.cs" />
      <Compile Include="Assets\Scripts\System\Logging.cs" />
+     <Compile Include="Assets\Scripts\System\Registry.cs" />
      <Compile Include="Assets\Scripts\System\Singleton.cs" />
      <Compile Include="Assets\Scripts\SystemSetup.cs" />
-     <Compile Include="Assets\Supercyan Character Pack Zombie Sample\Scripts\ZombieCameraLogic.cs" />
-     <Compile Include="Assets\Supercyan Character Pack Zombie Sample\Scripts\ZombieCharacterControl.cs" />
-     <Compile Include="Assets\Supercyan Character Pack Zombie Sample\Scripts\ZombieFree.cs" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMPro.cginc" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMP_SDF-Mobile Overlay.shader" />
-     <None Include="Assets\Supercyan Character Pack Zombie Sample\Shaders\Legacy\CelShader.shader" />
+     <None Include="Assets\Characters\Zombie\Shaders\Legacy\CelShader.shader" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMP_Bitmap.shader" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMP_SDF-Surface-Mobile.shader" />
-     <None Include="Assets\Supercyan Character Pack Zombie Sample\Shaders\SupercyanShader.shader" />
+     <None Include="Assets\Characters\Zombie\Shaders\SupercyanShader.shader" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMP_SDF-Surface.shader" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMP_Bitmap-Custom-Atlas.shader" />
@@ -90,7 +95,7 @@
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMPro_Surface.cginc" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMP_SDF-Mobile Masking.shader" />
-     <None Include="Assets\Supercyan Character Pack Zombie Sample\Shaders\SupercyanShaderLighting.cginc" />
+     <None Include="Assets\Characters\Zombie\Shaders\SupercyanShaderLighting.cginc" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMP_SDF Overlay.shader" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMP_Bitmap-Mobile.shader" />
      <None Include="Assets\Thirdparty\TextMesh Pro\Resources\Shaders\TMP_SDF-Mobile.shader" />

@@ -1,7 +1,7 @@
 ﻿using NLog;
 using UnityEngine;
 
-namespace Tyranny.Client.System
+namespace System
 {
     public class Logging : Singleton<Logging>
     {

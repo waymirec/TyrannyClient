@@ -1,13 +1,12 @@
 ﻿using NLog;
 using System;
-using Tyranny.Client.Events;
-using Tyranny.Client.Network;
-using Tyranny.Client.System;
+using Managers;
+using Events;
+using Network;
 using Tyranny.Networking;
 using UnityEngine;
-using UnityEngine.AI;
 
-namespace Tyranny.Client.Handlers
+namespace Handlers
 {
     public class WorldHandlers
     {
@@ -19,76 +18,74 @@ namespace Tyranny.Client.Handlers
             var guid = new Guid(packetIn.ReadBytes(16));
             worldClient.Id = guid;
 
-            var worldAuthEventArgs = new WorldAuthEventArgs {Guid = worldClient.Id};
-            Registry.Get<EventManager>().FireEvent_OnWorldAuth(worldClient, worldAuthEventArgs);
+            Registry.Get<NetworkEventManager>().FireEvent_OnWorldAuth(worldClient, new NetworkWorldAuthEventArgs
+            {
+                Guid = worldClient.Id
+            });
         }
 
         [PacketHandler(TyrannyOpcode.Ping)]
         public static void HandlePing(PacketReader packetIn, WorldClient worldClient)
         {
             var counter = packetIn.ReadInt32();
-
+            Registry.Get<NetworkEventManager>().FireEvent_OnPing(worldClient, new NetworkPingPongArgs
+            {
+                Guid = worldClient.Id, Count = counter
+            });
+            
             var pong = new PacketWriter(TyrannyOpcode.Pong);
             pong.Write(counter + 1);
             worldClient.Send(pong);
         }
         
+        [PacketHandler(TyrannyOpcode.Pong)]
+        public static void HandlePong(PacketReader packetIn, WorldClient worldClient)
+        {
+            var counter = packetIn.ReadInt32();
+            Registry.Get<NetworkEventManager>().FireEvent_OnPong(worldClient, new NetworkPingPongArgs
+            {
+                Guid = worldClient.Id, Count = counter
+            });
+        }
+        
         [PacketHandler(TyrannyOpcode.EnterWorld)]
         public static void HandleEnterWorld(PacketReader packetIn, WorldClient worldClient)
         {
-            var x = packetIn.ReadSingle();
-            var y = packetIn.ReadSingle();
-            var z = packetIn.ReadSingle();
-
-            Logger.Debug($"Enter World: {x:F2}, {y:F2}, {z:F2}");
-
-            var args = new EnterWorldEventArgs
+            Registry.Get<NetworkEventManager>().FireEvent_OnEnterWorld(worldClient, new NetworkEnterWorldEventArgs
             {
-                Guid = worldClient.Id,
-                Position = new Vector3(x, y, z)
-            };
-
-            Debug.Log($"Creating player object {x},{y},{z}");
-            var position = new Vector3(x, y, z);
-            var go = GameObject.Instantiate(Resources.Load("PlayerZombie"), position, Quaternion.identity) as GameObject;
-            //Camera.main.GetComponent<FollowCamera>().target = go;
+                Guid = worldClient.Id, 
+                Position = new Vector3(packetIn.ReadSingle(), packetIn.ReadSingle(), packetIn.ReadSingle())
+            });
         }
 
-        [PacketHandler(TyrannyOpcode.SpawnGo)]
-        public static void HandleSpawnGameObject(PacketReader packetIn, WorldClient worldClient)
+        [PacketHandler(TyrannyOpcode.SpawnWorldEntity)]
+        public static void HandleSpawnWorldEntity(PacketReader packetIn, WorldClient worldClient)
         {
-            var guid = new Guid(packetIn.ReadBytes(16));
-            var x = packetIn.ReadSingle();
-            var y = packetIn.ReadSingle();
-            var z = packetIn.ReadSingle();
-
-            Debug.Log($"Spawning GO at {x},{y},{z}");
-            var position = new Vector3(x, y, z);
-            var go = GameObject.Instantiate(Resources.Load("PlayerZombie"), position, Quaternion.identity) as GameObject;
-            go.name = guid.ToString();
+            Registry.Get<NetworkEventManager>().FireEvent_OnSpawnWorldEntity(worldClient, new NetworkSpawnWorldEntityEventArgs
+            {
+                Guid = new Guid(packetIn.ReadBytes(16)), 
+                Position = new Vector3(packetIn.ReadSingle(), packetIn.ReadSingle(), packetIn.ReadSingle())
+            });
         }
 
-        [PacketHandler(TyrannyOpcode.DestroyGo)]
-        public static void HandleDestroyGameObject(PacketReader packetIn, WorldClient worldClient)
+        [PacketHandler(TyrannyOpcode.DestroyWorldEntity)]
+        public static void HandleDestroyWorldEntity(PacketReader packetIn, WorldClient worldClient)
         {
-            var guid = new Guid(packetIn.ReadBytes(16));
-            Debug.Log("Destroying GO: " + guid.ToString());
-            GameObject.Destroy(GameObject.Find(guid.ToString()));
+            Registry.Get<NetworkEventManager>().FireEvent_OnDestroyWorldEntity(worldClient, new NetworkDestroyWorldEntityEventArgs
+            {
+                Guid = new Guid(packetIn.ReadBytes(16))
+            });
         }
         
-        [PacketHandler(TyrannyOpcode.Move)]
-        public static void HandleMove(PacketReader packetIn, WorldClient worldClient)
+        [PacketHandler(TyrannyOpcode.MoveWorldEntity)]
+        public static void HandleMoveWorldEntity(PacketReader packetIn, WorldClient worldClient)
         {
-            var guid = new Guid(packetIn.ReadBytes(16));
-            var srcX = packetIn.ReadSingle();
-            var srcY = packetIn.ReadSingle();
-            var srcZ = packetIn.ReadSingle();
-            var dstX = packetIn.ReadSingle();
-            var dstY = packetIn.ReadSingle();
-            var dstZ = packetIn.ReadSingle();
-            
-            var go = GameObject.Find(guid.ToString());
-            go.GetComponent<NavMeshAgent>().SetDestination(new Vector3(dstX, dstY, dstZ));
+            Registry.Get<NetworkEventManager>().FireEvent_OnMoveWorldEntity(worldClient, new NetworkMoveWorldEntityArgs
+            {
+                Guid = new Guid(packetIn.ReadBytes(16)),
+                Source = new Vector3(packetIn.ReadSingle(), packetIn.ReadSingle(), packetIn.ReadSingle()),
+                Destination = new Vector3(packetIn.ReadSingle(), packetIn.ReadSingle(), packetIn.ReadSingle())
+            });
         }
     }
 }

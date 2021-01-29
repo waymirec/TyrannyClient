@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Tyranny.Networking;
 
-namespace Tyranny.Client.Network
+namespace Network
 {
     public class AuthenticationClient
     {
@@ -33,12 +33,19 @@ namespace Tyranny.Client.Network
                 throw new IOException($"failed to connect to {_serverAddress}:{_serverPort}");
             }
 
-            var challenge = Identify(username);
-            var ack = Verify(challenge, password);
+            try
+            {
+                var challenge = Identify(username);
+                var ack = Verify(challenge, password);
             
-            return ack == 0
-                ? CompleteAuth()
-                : new AuthenticationResult((AuthenticationStatus)ack);
+                return ack == 0
+                    ? CompleteAuth()
+                    : new AuthenticationResult((AuthenticationStatus)ack);
+            }
+            finally
+            {
+                _tcpClient.Close();
+            }
         }
 
         private byte[] Identify(String username)

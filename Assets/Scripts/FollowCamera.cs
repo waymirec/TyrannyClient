@@ -2,14 +2,27 @@
 
 public class FollowCamera : MonoBehaviour
 {
-    public GameObject target;
-    public Vector3 offset = new Vector3(2, 2, 2); //Vector3.zero;
+    // camera will follow this object
+    public Transform target;
+    
+    // offset between camera and target
+    public Vector3 Offset;
 
-    void LateUpdate()
+    // change this value to get desired smoothness
+    public float SmoothTime = 0.3f;
+
+    // This value will change at the runtime depending on target movement. Initialize with zero vector.
+    private Vector3 velocity = Vector3.zero;
+
+    private void LateUpdate()
     {
-        if (target != null && offset != Vector3.zero)
-        {
-            transform.position = target.transform.position + offset;
-        }
+        if (target == null || Camera.main == null) return;
+
+    // update position
+        Vector3 targetPosition = target.position + Offset;
+        Camera.main.transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref velocity, SmoothTime);
+
+        // update rotation
+        transform.LookAt(target);
     }
 }

@@ -1,14 +1,14 @@
 ﻿using NLog;
 using System;
 using System.Collections.Generic;
-using Tyranny.Client.Handlers;
-using Tyranny.Client.System;
+using Handlers;
+using Managers;
 using Tyranny.Networking;
 using UnityEngine.SceneManagement;
 
-namespace Tyranny.Client.Network
+namespace Network
 {
-    public class WorldClient : Singleton<WorldClient>
+    public class WorldClient
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -57,7 +57,14 @@ namespace Tyranny.Client.Network
 
         public void Close()
         {
-            tcpClient.Close();
+            try
+            {
+                tcpClient.Close();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Exception trying to close socket");
+            }
         }
 
         public void Send(PacketWriter packetOut)
@@ -66,9 +73,9 @@ namespace Tyranny.Client.Network
             tcpClient.Send(packetOut);
         }
 
-        public void OnConnected(object source, SocketEventArgs args)
+        private void OnConnected(object source, TcpSocketEventArgs args)
         {
-            Registry.Get<EventManager>().FireEvent_OnWorldConnect(this);
+            Registry.Get<NetworkEventManager>().FireEvent_OnWorldConnect(this);
             PacketWriter ident = new PacketWriter(TyrannyOpcode.GameIdent);
             ident.Write(Username);
             ident.Write((short)AuthToken.Length);
@@ -77,21 +84,21 @@ namespace Tyranny.Client.Network
             tcpClient.Send(ident);
         }
 
-        public void OnConnectFailed(object source, SocketEventArgs args)
+        private void OnConnectFailed(object source, TcpSocketEventArgs args)
         {
-            Registry.Get<EventManager>().FireEvent_OnWorldConnectFailed(this);
+            Registry.Get<NetworkEventManager>().FireEvent_OnWorldConnectFailed(this);
             Logger.Error($"Failed to connect to {Host}:{Port}");
             SceneManager.LoadScene("LoginScene");
         }
 
-        public void OnDisconnected(object source, SocketEventArgs args)
+        private void OnDisconnected(object source, TcpSocketEventArgs args)
         {
-            Registry.Get<EventManager>().FireEvent_OnWorldDisconnect(this);
+            Registry.Get<NetworkEventManager>().FireEvent_OnWorldDisconnect(this);
             Logger.Info($"Disconnected from {Host}:{Port}");
             SceneManager.LoadScene("LoginScene");
         }
 
-        public void OnDataReceived(object source, PacketEventArgs args)
+        private void OnDataReceived(object source, TcpPacketEventArgs args)
         {
             TyrannyOpcode opcode = args.Packet.Opcode;
             if (packetHandlers.TryGetValue(opcode, out PacketHandlerDelegate handler))

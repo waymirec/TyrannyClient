@@ -1,11 +1,9 @@
 ﻿using System;
+using Events;
+using Managers;
 using TMPro;
-using Tyranny.Client.Events;
-using Tyranny.Client.Network;
-using Tyranny.Client.System;
-using Tyranny.Networking;
+using Network;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class Login : MonoBehaviour
@@ -19,6 +17,13 @@ public class Login : MonoBehaviour
     [SerializeField]
     private Text statusText;
 
+    private NetworkEventManager _networkEventManager;
+    
+    private void Awake()
+    {
+        _networkEventManager = Registry.Get<NetworkEventManager>();
+    }
+    
     public void Update()
     {
         if (Input.GetKeyDown(KeyCode.Tab))
@@ -58,30 +63,20 @@ public class Login : MonoBehaviour
         var configuration = Registry.Configuration;
         var authenticationClient = new AuthenticationClient(configuration.AuthenticationServer.Address, configuration.AuthenticationServer.Port);
         var result = authenticationClient.Authenticate(username, password);
-
-        Debug.Log($"Status: {result.Status}");
         if (result.Status != AuthenticationStatus.Success)
         {
             Debug.Log("Failed to authenticate");
             return false;
         }
 
-        Debug.Log($"Server: {result.Ip}:{result.Port}");
-        Debug.Log($"Token:{result.Token.Length} => {BitConverter.ToString(result.Token).Replace("-", string.Empty)}");
-        var worldClient = Registry.Get<WorldClient>();
-        worldClient.Host = result.Ip;
-        worldClient.Port = result.Port;
+        _networkEventManager.FireEvent_OnLoginAuth(this, new NetworkLoginAuthEventArgs
+        {
+            Username = username,
+            Token = result.Token,
+            WorldHost = result.Ip,
+            WorldPort = result.Port
+        });
         
-        Registry.Get<EventManager>().OnWorldAuth += OnWorldAuth;
-        worldClient.Connect(username, result.Token);
         return true;
-    }
-
-    private void OnWorldAuth(object source, WorldAuthEventArgs args)
-    {
-        SceneManager.LoadScene("WorldScene");
-        var readyPacket = new PacketWriter(TyrannyOpcode.GameReady);
-        var worldClient = Registry.Get<WorldClient>();
-        worldClient.Send(readyPacket);
     }
 }

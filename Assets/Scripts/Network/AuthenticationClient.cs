@@ -13,14 +13,14 @@ namespace Network
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         
         private readonly SHA256 _sha256;
-        private readonly TcpClient _tcpClient;
+        private readonly TcpClient<AuthOpcode> _tcpClient;
         private readonly string _serverAddress;
         private readonly int _serverPort;
 
         public AuthenticationClient(string serverAddress, int serverPort)
         {
             _sha256 = SHA256Managed.Create();
-            _tcpClient = new TcpClient();
+            _tcpClient = new TcpClient<AuthOpcode>();
             _serverAddress = serverAddress;
             _serverPort = serverPort;
         }
@@ -51,7 +51,7 @@ namespace Network
         private byte[] Identify(String username)
         {
             // SEND IDENT
-            var identPacket = new PacketWriter(TyrannyOpcode.AuthIdent);
+            var identPacket = new PacketWriter<AuthOpcode>(AuthOpcode.AuthIdent);
             identPacket.Write((short)1); // Major Vsn
             identPacket.Write((short)1); // Minor Vsn
             identPacket.Write((short)1); // Maint Vsn
@@ -59,7 +59,7 @@ namespace Network
             identPacket.Write(username);
             _tcpClient.Send(identPacket);
 
-            if (_tcpClient.Read(out PacketReader challengePacket))
+            if (_tcpClient.Read(out PacketReader<AuthOpcode> challengePacket))
             {
                 var len = challengePacket.ReadInt16();
                 Console.WriteLine($"Challenge Length: {len}");
@@ -88,12 +88,12 @@ namespace Network
             var proofLength = BitConverter.GetBytes((short)proof.Length);
             if (BitConverter.IsLittleEndian) Array.Reverse(proofLength);
 
-            var proofPacket = new PacketWriter(TyrannyOpcode.AuthProof);
+            var proofPacket = new PacketWriter<AuthOpcode>(AuthOpcode.AuthProof);
             proofPacket.Write(proofLength);
             proofPacket.Write(proof);
             _tcpClient.Send(proofPacket);
             
-            if (_tcpClient.Read(out PacketReader proofAckPacket))
+            if (_tcpClient.Read(out PacketReader<AuthOpcode> proofAckPacket))
             {
                 return proofAckPacket.ReadByte();
             }
@@ -103,11 +103,11 @@ namespace Network
 
         private AuthenticationResult CompleteAuth()
         {
-            var packetOut = new PacketWriter(TyrannyOpcode.AuthProofAckAck);
+            var packetOut = new PacketWriter<AuthOpcode>(AuthOpcode.AuthProofAckAck);
             packetOut.Write(1);
             _tcpClient.Send(packetOut);
 
-            if (_tcpClient.Read(out PacketReader authCompletePacket))
+            if (_tcpClient.Read(out PacketReader<AuthOpcode> authCompletePacket))
             {
                 var status = authCompletePacket.ReadInt32();
                 if (status == 0)

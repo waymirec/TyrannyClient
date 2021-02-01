@@ -1,5 +1,4 @@
 ﻿using Network;
-using System;
 using Tyranny.Networking;
 using UnityEngine;
 using UnityEngine.AI;
@@ -33,7 +32,7 @@ public class PlayerController : MonoBehaviour
                 agent.SetDestination(hit.point);
 
                 var pos = agent.transform.position;
-                PacketWriter movePacket = new PacketWriter(TyrannyOpcode.MoveWorldEntity);
+                var movePacket = new PacketWriter<GameOpcode>(GameOpcode.MoveWorldEntity);
                 movePacket.Write(pos.x);
                 movePacket.Write(pos.y);
                 movePacket.Write(pos.z);

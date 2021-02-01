@@ -72,7 +72,10 @@
      <Compile Include="Assets\Scripts\Managers\GameManager.cs" />
      <Compile Include="Assets\Scripts\Managers\NetworkEventManager.cs" />
      <Compile Include="Assets\Scripts\Managers\WorldEntityManager.cs" />
+     <Compile Include="Assets\Scripts\Network\AuthOpcode.cs" />
      <Compile Include="Assets\Scripts\Network\AuthenticationClient.cs" />
+     <Compile Include="Assets\Scripts\Network\GameOpcode.cs" />
+     <Compile Include="Assets\Scripts\Network\PacketHandler.cs" />
      <Compile Include="Assets\Scripts\Network\WorldClient.cs" />
      <Compile Include="Assets\Scripts\Player.cs" />
      <Compile Include="Assets\Scripts\PlayerController.cs" />
@@ -303,9 +306,6 @@
  </Reference>
  <Reference Include="UnityEngine.XRModule">
  <HintPath>/Applications/Unity/Hub/Editor/2019.4.18f1/Unity.app/Contents/Managed/UnityEngine/UnityEngine.XRModule.dll</HintPath>
- </Reference>
- <Reference Include="GameClientLib">
- <HintPath>/Users/waymirec/code/TyrannyClient/Assets/Plugins/GameClientLib.dll</HintPath>
  </Reference>
  <Reference Include="CommonLib">
  <HintPath>/Users/waymirec/code/TyrannyClient/Assets/Plugins/CommonLib.dll</HintPath>

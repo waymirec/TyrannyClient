@@ -1,6 +1,7 @@
 ﻿using NLog;
 using System;
 using System.Collections.Generic;
+using CommonLib;
 using Handlers;
 using Managers;
 using Tyranny.Networking;
@@ -11,9 +12,7 @@ namespace Network
     public class WorldClient
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
-        public delegate void PacketHandlerDelegate(PacketReader packetIn, WorldClient worldClient);
-
+        
         public string Host { get; set; }
         public int Port { get; set; }
         public string Username { get; private set; }
@@ -27,12 +26,13 @@ namespace Network
         
         public bool Connected => tcpClient?.Connected ?? false;
 
-        private AsyncTcpClient tcpClient;
-        private Dictionary<TyrannyOpcode, PacketHandlerDelegate> packetHandlers;
+        private AsyncTcpClient<GameOpcode> tcpClient;
+        private delegate void PacketHandlerDelegate(PacketReader<GameOpcode> packetIn, WorldClient worldClient);
+        private Dictionary<GameOpcode, PacketHandlerDelegate> packetHandlers;
 
         public WorldClient()
         {
-            packetHandlers = PacketHandler.Load<PacketHandlerDelegate>(typeof(WorldHandlers));
+            packetHandlers = PacketHandlerLoader<GameOpcode>.Load<PacketHandlerDelegate>(typeof(GamePacketHandler), typeof(WorldHandlers));
         }
 
         private void OnDestroy()
@@ -46,7 +46,7 @@ namespace Network
             AuthToken = authToken;
 
             Logger.Debug($"Connecting to server {Host}:{Port}...");
-            tcpClient = new AsyncTcpClient();
+            tcpClient = new AsyncTcpClient<GameOpcode>();
             tcpClient.OnConnected += OnConnected;
             tcpClient.OnConnectFailed += OnConnectFailed;
             tcpClient.OnDisconnected += OnDisconnected;
@@ -63,20 +63,20 @@ namespace Network
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "Exception trying to close socket");
+                Logger.Warn(ex, "Exception trying to close socket.");
             }
         }
 
-        public void Send(PacketWriter packetOut)
+        public void Send(PacketWriter<GameOpcode> packetOut)
         {
             Logger.Debug($"Sending packet ({packetOut.Opcode})...");
             tcpClient.Send(packetOut);
         }
 
-        private void OnConnected(object source, TcpSocketEventArgs args)
+        private void OnConnected(object source, TcpSocketEventArgs<GameOpcode> args)
         {
             Registry.Get<NetworkEventManager>().FireEvent_OnWorldConnect(this);
-            PacketWriter ident = new PacketWriter(TyrannyOpcode.GameIdent);
+            var ident = new PacketWriter<GameOpcode>(GameOpcode.GameIdent);
             ident.Write(Username);
             ident.Write((short)AuthToken.Length);
             ident.Write(AuthToken);
@@ -84,26 +84,26 @@ namespace Network
             tcpClient.Send(ident);
         }
 
-        private void OnConnectFailed(object source, TcpSocketEventArgs args)
+        private void OnConnectFailed(object source, TcpSocketEventArgs<GameOpcode> args)
         {
             Registry.Get<NetworkEventManager>().FireEvent_OnWorldConnectFailed(this);
             Logger.Error($"Failed to connect to {Host}:{Port}");
             SceneManager.LoadScene("LoginScene");
         }
 
-        private void OnDisconnected(object source, TcpSocketEventArgs args)
+        private void OnDisconnected(object source, TcpSocketEventArgs<GameOpcode> args)
         {
             Registry.Get<NetworkEventManager>().FireEvent_OnWorldDisconnect(this);
             Logger.Info($"Disconnected from {Host}:{Port}");
             SceneManager.LoadScene("LoginScene");
         }
 
-        private void OnDataReceived(object source, TcpPacketEventArgs args)
+        private void OnDataReceived(object source, TcpPacketEventArgs<GameOpcode> args)
         {
-            TyrannyOpcode opcode = args.Packet.Opcode;
+            var opcode = args.Packet.Opcode;
             if (packetHandlers.TryGetValue(opcode, out PacketHandlerDelegate handler))
             {
-                Logger.Debug($"Received opcode: {opcode}");
+                Logger.Debug($"Received opcode: {opcode}. Handler = {handler}");
                 try
                 {
                     handler(args.Packet, this);

@@ -12,20 +12,20 @@ namespace Handlers
     {
         private static readonly NLog.Logger Logger = LogManager.GetCurrentClassLogger();
 
-        [PacketHandler(TyrannyOpcode.Hello)]
-        public static void HandleHello(PacketReader packetIn, WorldClient worldClient)
+        [GamePacketHandler(GameOpcode.Hello)]
+        public static void HandleHello(PacketReader<GameOpcode> packetIn, WorldClient worldClient)
         {
             var guid = new Guid(packetIn.ReadBytes(16));
             worldClient.Id = guid;
-
+            
             Registry.Get<NetworkEventManager>().FireEvent_OnWorldAuth(worldClient, new NetworkWorldAuthEventArgs
             {
                 Guid = worldClient.Id
             });
         }
 
-        [PacketHandler(TyrannyOpcode.Ping)]
-        public static void HandlePing(PacketReader packetIn, WorldClient worldClient)
+        [GamePacketHandler(GameOpcode.Ping)]
+        public static void HandlePing(PacketReader<GameOpcode> packetIn, WorldClient worldClient)
         {
             var counter = packetIn.ReadInt32();
             Registry.Get<NetworkEventManager>().FireEvent_OnPing(worldClient, new NetworkPingPongArgs
@@ -33,13 +33,13 @@ namespace Handlers
                 Guid = worldClient.Id, Count = counter
             });
             
-            var pong = new PacketWriter(TyrannyOpcode.Pong);
+            var pong = new PacketWriter<GameOpcode>(GameOpcode.Pong);
             pong.Write(counter + 1);
             worldClient.Send(pong);
         }
         
-        [PacketHandler(TyrannyOpcode.Pong)]
-        public static void HandlePong(PacketReader packetIn, WorldClient worldClient)
+        [GamePacketHandler(GameOpcode.Pong)]
+        public static void HandlePong(PacketReader<GameOpcode> packetIn, WorldClient worldClient)
         {
             var counter = packetIn.ReadInt32();
             Registry.Get<NetworkEventManager>().FireEvent_OnPong(worldClient, new NetworkPingPongArgs
@@ -48,18 +48,20 @@ namespace Handlers
             });
         }
         
-        [PacketHandler(TyrannyOpcode.EnterWorld)]
-        public static void HandleEnterWorld(PacketReader packetIn, WorldClient worldClient)
+        [GamePacketHandler(GameOpcode.EnterWorld)]
+        public static void HandleEnterWorld(PacketReader<GameOpcode> packetIn, WorldClient worldClient)
         {
             Registry.Get<NetworkEventManager>().FireEvent_OnEnterWorld(worldClient, new NetworkEnterWorldEventArgs
             {
                 Guid = worldClient.Id, 
                 Position = new Vector3(packetIn.ReadSingle(), packetIn.ReadSingle(), packetIn.ReadSingle())
             });
+
+            worldClient.Send(new PacketWriter<GameOpcode>(GameOpcode.WorldEntityDisco));
         }
 
-        [PacketHandler(TyrannyOpcode.SpawnWorldEntity)]
-        public static void HandleSpawnWorldEntity(PacketReader packetIn, WorldClient worldClient)
+        [GamePacketHandler(GameOpcode.SpawnWorldEntity)]
+        public static void HandleSpawnWorldEntity(PacketReader<GameOpcode> packetIn, WorldClient worldClient)
         {
             Registry.Get<NetworkEventManager>().FireEvent_OnSpawnWorldEntity(worldClient, new NetworkSpawnWorldEntityEventArgs
             {
@@ -68,8 +70,8 @@ namespace Handlers
             });
         }
 
-        [PacketHandler(TyrannyOpcode.DestroyWorldEntity)]
-        public static void HandleDestroyWorldEntity(PacketReader packetIn, WorldClient worldClient)
+        [GamePacketHandler(GameOpcode.DestroyWorldEntity)]
+        public static void HandleDestroyWorldEntity(PacketReader<GameOpcode> packetIn, WorldClient worldClient)
         {
             Registry.Get<NetworkEventManager>().FireEvent_OnDestroyWorldEntity(worldClient, new NetworkDestroyWorldEntityEventArgs
             {
@@ -77,8 +79,8 @@ namespace Handlers
             });
         }
         
-        [PacketHandler(TyrannyOpcode.MoveWorldEntity)]
-        public static void HandleMoveWorldEntity(PacketReader packetIn, WorldClient worldClient)
+        [GamePacketHandler(GameOpcode.MoveWorldEntity)]
+        public static void HandleMoveWorldEntity(PacketReader<GameOpcode> packetIn, WorldClient worldClient)
         {
             Registry.Get<NetworkEventManager>().FireEvent_OnMoveWorldEntity(worldClient, new NetworkMoveWorldEntityArgs
             {
